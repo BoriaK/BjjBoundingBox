@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7ee5a36f-01f7-41b7-a86a-69c7fd9dea2d" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Common_Files/Datasets_from_CSV.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/0007419.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/0303855.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/0304317.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/0908468.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/0908736.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/1000283.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/1000544.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/1003853.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/1400415.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/test/1400686.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004139.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004156.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004173.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004190.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004207.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004224.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004241.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004258.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004275.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004293.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004301.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004317.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004333.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/0004349.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dataset/Sub_Set_v01/train/bjj/labeled/labels_bjj_combined.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Results_for_Detector_and_Classifier/bjjBoundingBoxTest.docx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Results_for_Detector_and_Classifier/cropped_image.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Results_for_Detector_and_Classifier/from_screenShot.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/checkpoints/bjj_9.pth" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run_Detector_w_Screenshot.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run_Detector_w_Screenshot_v2.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/take_Screenshot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/BjjBoundingBox.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/BjjBoundingBox.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common_Files/Datasets.py" beforeDir="false" afterPath="$PROJECT_DIR$/Common_Files/Datasets_from_XML.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common_Files/ElementTree_pretty.py" beforeDir="false" afterPath="$PROJECT_DIR$/Common_Files/ElementTree_pretty.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common_Files/Models.py" beforeDir="false" afterPath="$PROJECT_DIR$/Common_Files/Models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common_Files/deleateAllFiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/Common_Files/deleateAllFiles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common_Files/modifyXML.py" beforeDir="false" afterPath="$PROJECT_DIR$/Common_Files/modifyXML.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common_Files/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Common_Files/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_Test_Detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_Test_Detector.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_Train_Detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_Train_Detector.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="2huleEhhjeE03BeJLzkAFJrtgXM" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Python.Datasets_from_CSV.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.run_Detector_w_Screenshot.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_Detector_w_Screenshot_v2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_Test_Detector.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_Train_Detector.executor&quot;: &quot;Run&quot;,
+    &quot;Python.take_Screenshot.executor&quot;: &quot;Debug&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Administrator/Python_Projects/BjjBoundingBox&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Administrator\Python_Projects\BjjBoundingBox" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-5b207ade9991-746f403e7f0c-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.17890.14" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7ee5a36f-01f7-41b7-a86a-69c7fd9dea2d" name="Changes" comment="" />
+      <created>1718451937166</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1718451937166</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="CUSTOM_BOOLEAN_PROPERTIES">
+                <map>
+                  <entry key="Show.Git.Branches" value="true" />
+                </map>
+              </option>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Common_Files/Datasets_from_CSV.py</url>
+          <line>88</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Common_Files/Datasets_from_CSV.py</url>
+          <line>30</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Common_Files/Datasets_from_CSV.py</url>
+          <line>72</line>
+          <option name="timeStamp" value="12" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/run_Test_Detector.py</url>
+          <line>105</line>
+          <option name="timeStamp" value="15" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/take_Screenshot.py</url>
+          <line>55</line>
+          <option name="timeStamp" value="38" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/take_Screenshot.py</url>
+          <line>41</line>
+          <option name="timeStamp" value="39" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
