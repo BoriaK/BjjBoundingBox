@@ -64,7 +64,7 @@ with mss.mss() as sct:
     im = cv2.putText(im_npArray, str(1), (100, 800),
                      cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 2, (255, 0, 0), 10, cv2.LINE_AA)
 
-    # cv2.imwrite('./Results_for_Detector_and_Classifier/' + 'from_screenShot.png', im)
+    # cv2.imwrite('./Results_for_Detector/' + 'from_screenShot.png', im)
 
     # for visualization:
     cv2.namedWindow('from_screenShot.png', cv2.WINDOW_NORMAL)  # to make the image fit the display window when printing

@@ -133,7 +133,7 @@ def crop_and_save_image(pil_image, box, filename="cropped_image.png"):
     # Crop the image using the bounding box
     cropped_image = pil_image.crop((box[0], box[1], box[2], box[3]))
     # Save the cropped image
-    cropped_image.save('./Results_for_Detector_and_Classifier/' + filename)
+    cropped_image.save('./Results_for_Detector/' + filename)
     print(f"Cropped image saved as {filename}")
 
     return cropped_image
@@ -181,7 +181,7 @@ def on_press(key):
             # cv2.destroyAllWindows()
             # plt.show()
 
-            # cv2.imwrite('./Results_for_Detector_and_Classifier/' + 'from_screenShot.png', image_with_boxes)
+            # cv2.imwrite('./Results_for_Detector/' + 'from_screenShot.png', image_with_boxes)
 
             # Crop and save the image using the bounding box of the highest scored object
             cropped_image = crop_and_save_image(image, boxes[0])

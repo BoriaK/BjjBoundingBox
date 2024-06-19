@@ -115,7 +115,7 @@ with mss.mss() as sct:
 
             elapsed = time.time() - ts
             print('elapsed={}'.format(elapsed))
-            # cv2.imwrite('./Results_for_Detector_and_Classifier/' + 'from_screenShot.png', im)
+            # cv2.imwrite('./Results_for_Detector/' + 'from_screenShot.png', im)
             # for visualization:
             cv2.namedWindow('from_screenShot.png',
                             cv2.WINDOW_NORMAL)  # to make the image fit the display window when printing

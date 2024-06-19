@@ -41,7 +41,7 @@ ts = time.time()
 root = r'./Dataset/Sub_Set_v01'
 
 # Initialize the CSV file and write the header
-with open('./Results_for_Detector_and_Classifier/detection_results.csv', mode='w', newline='') as file:
+with open('Results_for_Detector/detection_results.csv', mode='w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(["label_name", "bbox_x", "bbox_y", "bbox_width", "bbox_height", "image_name", "score"])
 
@@ -90,8 +90,8 @@ with open('./Results_for_Detector_and_Classifier/detection_results.csv', mode='w
                                  cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 2, (255, 0, 0), 10, cv2.LINE_AA)
         elapsed = time.time() - ts
         print('elapsed={}'.format(elapsed))
-        # cv2.imwrite('./Results_for_Detector_and_Classifier/' + 'testing' + img.split("\\")[-1], im_cv)
-        cv2.imwrite('./Results_for_Detector_and_Classifier/' + 'testing' + img.split("\\")[-1], im)
+        # cv2.imwrite('./Results_for_Detector/' + 'testing' + img.split("\\")[-1], im_cv)
+        cv2.imwrite('./Results_for_Detector/' + 'testing' + img.split("\\")[-1], im)
         # for visualization:
         # cv2.namedWindow(img.split("\\")[-1], cv2.WINDOW_NORMAL)  # to make the image fit the display window when printing
         # # cv2.imshow(img.split("\\")[-1], im_cv)

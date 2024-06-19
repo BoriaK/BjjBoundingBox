@@ -197,10 +197,10 @@ def trainDetector():
                 # for Debug disable saving the image with bounding box, and just display it:
                 ########################################################################################
                 if args.save_results:
-                    if not os.path.isdir(r'./Results_for_Detector_and_Classifier/'):
-                        os.mkdir('./Results_for_Detector_and_Classifier/')
+                    if not os.path.isdir(r'Results_for_Detector/'):
+                        os.mkdir('Results_for_Detector/')
                     cv2.imwrite(
-                        './Results_for_Detector_and_Classifier/' + 'epoch' + str(epoch) + '_Img' + str(i) + '.jpg',
+                        './Results_for_Detector/' + 'epoch' + str(epoch) + '_Img' + str(i) + '.jpg',
                         im_)
                 ###########################################################
                 # cv2.namedWindow('../Results/' + str(i),
