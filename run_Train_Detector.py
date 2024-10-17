@@ -4,22 +4,21 @@ from torch.utils.data import DataLoader
 # from Common_Files.Datasets_XML import ObjectDetectDataset
 from Common_Files.Datasets_from_CSV import ObjectDetectDataset
 import argparse
-import torchvision.transforms as transforms
+from torchvision.transforms import v2
 from Common_Files.Models import Detector
 import math
 import sys
 import cv2
 import numpy as np
 import Common_Files.utils as utils
-# from Augmentation.data_aug.data_aug import *
-# from Augmentation.data_aug.bbox_util import *
 import torch.nn as nn
 from torchvision.ops import nms
 import matplotlib.pyplot as plt
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--resume_epoch', type=int, default=None, help='starting epoch')
-parser.add_argument('--n_epochs', type=int, default=10, help='number of epochs of training')
+parser.add_argument('--n_epochs', type=int, default=20, help='number of epochs of training')
 parser.add_argument('--batch_size', type=int, default=4, help='size of the batches')
 # parser.add_argument('--data', type=str, default=r'./Dataset/Sub_Set_v01/train/bed', help='root directory of the '
 #                                                                                          'dataset')
@@ -40,10 +39,14 @@ if not os.path.isdir(args.root_chkps):
     os.mkdir(args.root_chkps)
 
 '''train'''
-# use our dataset and defined transformations transforms_train = Sequence([RandomHorizontalFlip(0.5), RandomScale(
-# 0.5, diff=True), RandomRotate(10), RandomShear(0.2)]) transforms_train = Sequence( [RandomHorizontalFlip(0.5),
-# RandomRotate(10), RandomShear(0.2), RandomHSV(30,30,30), RandomColor(0.5), RandomTranslate(0.5)])
-transforms_train = None
+# use our dataset and defined transformations
+transforms_train = v2.Compose([v2.RandomHorizontalFlip(p=0.5),
+                               v2.RandomVerticalFlip(p=0.5),
+                               v2.RandomRotation(degrees=10),
+                               v2.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+                               v2.RandomInvert(p=0.2)])
+# transforms_train = Sequence([RandomHorizontalFlip(0.5),RandomRotate(10), RandomShear(0.2), RandomHSV(30,30,30), RandomColor(0.5), RandomTranslate(0.5)])
+# transforms_train = None
 
 transforms_test = None
 
@@ -156,12 +159,37 @@ def trainDetector():
             lr_scheduler.step()
 
         # evaluate on the test dataset
-        if epoch % 3 == 0 or epoch == args.n_epochs - 1:
+        # save checkpoint for every 3rd epoch
+        # if epoch % 3 == 0 or epoch == args.n_epochs - 1:
+        #     checkpoint = {'epoch': epoch,
+        #                   'model_state': model.state_dict(),
+        #                   'optimizer_state': optimizer.state_dict(),
+        #                   'lr_scheduler_state': lr_scheduler.state_dict()
+        #                   }
+        #     # for Debug dissable saving new check points:
+        #     torch.save(checkpoint, './checkpoints/bjj_' + str(epoch) + '.pth')
+        # save checkpoint for the epoch with the lowest loss:
+        if epoch == 0 or epoch == args.n_epochs - 1:
             checkpoint = {'epoch': epoch,
                           'model_state': model.state_dict(),
                           'optimizer_state': optimizer.state_dict(),
                           'lr_scheduler_state': lr_scheduler.state_dict()
                           }
+            best_loss = loss_av
+            best_epoch = 0
+            # for Debug dissable saving new check points:
+            torch.save(checkpoint, './checkpoints/bjj_' + str(epoch) + '.pth')
+        elif losses2print[0] < best_loss:
+            # remove the previous best checkpoint
+            os.remove('./checkpoints/bjj_' + str(best_epoch) + '.pth')
+            # save a new best checkpoint
+            checkpoint = {'epoch': epoch,
+                          'model_state': model.state_dict(),
+                          'optimizer_state': optimizer.state_dict(),
+                          'lr_scheduler_state': lr_scheduler.state_dict()
+                          }
+            best_loss = losses2print[0]
+            best_epoch = epoch
             # for Debug dissable saving new check points:
             torch.save(checkpoint, './checkpoints/bjj_' + str(epoch) + '.pth')
 

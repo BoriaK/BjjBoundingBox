@@ -1,32 +1,17 @@
 import os
 import torch
-import torchvision
-from torch.utils.data import DataLoader
-from Common_Files.Datasets_from_XML import ObjectDetectDataset
 from Common_Files.Models import Detector
-import sys
 import cv2
 import numpy as np
 import torchvision.transforms.functional as Ftv
-from torchvision.ops import nms
-import time
-import matplotlib.pyplot as plt
 from PIL import Image, ImageOps
-import glob
-import xml.etree.ElementTree as ET
-from Common_Files.ElementTree_pretty import prettify
-import csv
-import screeninfo
-import pyautogui
-import pygetwindow as gw
 import mss
 from pynput import keyboard
 import win32clipboard
 import win32con
 import io
 from pynput import keyboard as kb
-
-# from yattag import Doc, indent
+import shutil
 
 # This script is testing the detector, to detect Furniture and place bounding box around them
 
@@ -135,11 +120,22 @@ def draw_boxes(pil_image, boxes):
 def crop_and_save_image(pil_image, box, filename="cropped_image.png"):
     # Crop the image using the bounding box
     cropped_image = pil_image.crop((box[0], box[1], box[2], box[3]))
-    # Save the cropped image
-    cropped_image.save('./Results_for_Detector/' + filename)
-    print(f"Cropped image saved as {filename}")
+    # Convert cm to pixels (assuming 96 DPI)
+    dpi = 96  # standard screen DPI
+    target_cm = 4  # resize to 4[cm]
+    target_pixels = int((target_cm / 2.54) * dpi)  # 1 inch = 2.54 cm
 
-    return cropped_image
+    # Resize the image to the target size (width or height, whichever is larger)
+    cropped_image_resized = cropped_image.resize((target_pixels, target_pixels))
+
+    # Save the resized image
+    if not os.path.exists('./Results_for_Detector/'):
+        # Create the folder
+        os.makedirs('./Results_for_Detector/')
+    cropped_image_resized.save('./Results_for_Detector/' + filename)
+    print(f"Cropped and resized image saved as {filename} with size {target_cm} cm")
+
+    return cropped_image_resized
 
 
 def copy_image_to_clipboard(cropped_pil_image):
@@ -158,7 +154,7 @@ def copy_image_to_clipboard(cropped_pil_image):
 def on_press(key):
     try:
         if key == kb.Key.insert:
-        # if key.char == 'u':
+            # if key.char == 'u':
 
             monitor_index = 1  # Change this to the index of the screen you want to capture
             print(f"Taking screenshot of monitor {monitor_index}...")
@@ -203,6 +199,14 @@ def on_press(key):
         pass
 
 
+def delete_results_folder(folder_path='./Results_for_Detector/'):
+    if os.path.exists(folder_path):
+        shutil.rmtree(folder_path)
+        print(f"Folder '{folder_path}' and all its contents have been deleted.")
+    else:
+        print(f"Folder '{folder_path}' does not exist.")
+
+
 def main():
     print("Press 'Insert' to take a screenshot and detect objects.")
     print("Press 'ESC' to quit.")
@@ -214,6 +218,9 @@ def main():
 
     with keyboard.Listener(on_press=on_press) as listener:
         listener.join()
+
+    # Delete the folder at the end of the program
+    delete_results_folder()
 
 
 if __name__ == "__main__":
