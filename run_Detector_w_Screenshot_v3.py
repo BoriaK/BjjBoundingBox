@@ -120,20 +120,28 @@ def draw_boxes(pil_image, boxes):
 def crop_and_save_image(pil_image, box, filename="cropped_image.png"):
     # Crop the image using the bounding box
     cropped_image = pil_image.crop((box[0], box[1], box[2], box[3]))
+
     # Convert cm to pixels (assuming 96 DPI)
     dpi = 96  # standard screen DPI
-    target_cm = 4  # resize to 4[cm]
-    target_pixels = int((target_cm / 2.54) * dpi)  # 1 inch = 2.54 cm
+    target_cm_height = 4  # resize height to 4 cm
+    target_height_pixels = int((target_cm_height / 2.54) * dpi)  # Convert 4 cm to pixels
 
-    # Resize the image to the target size (width or height, whichever is larger)
-    cropped_image_resized = cropped_image.resize((target_pixels, target_pixels))
+    # Get the aspect ratio of the cropped image
+    aspect_ratio = cropped_image.width / cropped_image.height
+
+    # Calculate the new width while maintaining the aspect ratio
+    target_width_pixels = int(target_height_pixels * aspect_ratio)
+
+    # Resize the image to the new width and height (keeping proportional width)
+    cropped_image_resized = cropped_image.resize((target_width_pixels, target_height_pixels))
+
+    # Ensure the folder exists, or create it
+    if not os.path.exists('./Results_for_Detector/'):
+        os.makedirs('./Results_for_Detector/')
 
     # Save the resized image
-    if not os.path.exists('./Results_for_Detector/'):
-        # Create the folder
-        os.makedirs('./Results_for_Detector/')
     cropped_image_resized.save('./Results_for_Detector/' + filename)
-    print(f"Cropped and resized image saved as {filename} with size {target_cm} cm")
+    print(f"Cropped and resized image saved as {filename} with height {target_cm_height} cm and proportional width")
 
     return cropped_image_resized
 
