@@ -87,9 +87,9 @@ def trainDetector():
                                                    gamma=0.1)
 
     if args.resume_epoch is not None:
-        if not os.path.isfile('./checkpoints/bed_' + str(args.resume_epoch) + '.pth'):
+        if not os.path.isfile('./checkpoints/bjj_' + str(args.resume_epoch) + '.pth'):
             exit('no pth file')
-        checkpoint = torch.load('./checkpoints/bed_' + str(args.resume_epoch) + '.pth')
+        checkpoint = torch.load('./checkpoints/bjj_' + str(args.resume_epoch) + '.pth')
         model.load_state_dict(checkpoint['model_state'])
         optimizer.load_state_dict(checkpoint['optimizer_state'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state'])
