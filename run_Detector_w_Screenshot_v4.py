@@ -1,7 +1,9 @@
 import atexit
 import csv
 import glob
+import hashlib
 import os
+import time
 import torch
 from Common_Files.Models import Detector
 import cv2
@@ -19,13 +21,15 @@ import tkinter as tk
 import threading
 
 # v4 — active-learning helper:
-#   PrintScreen  → silently save full screenshot (before Greenshot opens)
-#   Home         → read clipboard crop, template-match → auto-add training entry
+#   PrintScreen  → silently save full screenshot and wait for Greenshot crop
+#   Home         → undo the last auto-saved training entry
 
 TRAINING_DIR = './Dataset/Sub_Set_v01/train/bjj/labeled'
 CSV_PATH     = os.path.join(TRAINING_DIR, 'labels_bjj_combined.csv')
 LABEL_NAME   = 'bjj'
 MATCH_THRESH = 0.80   # minimum template-match confidence to accept
+AUTO_COMMIT_TIMEOUT = 45
+AUTO_COMMIT_POLL_SECONDS = 0.25
 
 '''adding types to arguments'''
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -33,7 +37,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 n_classes = 2
 is_train  = False
 model     = Detector(n_classes, device)
-checkpoint = torch.load('./checkpoints/bjj_19' + '.pth')
+checkpoint = torch.load('./checkpoints/bjj_39' + '.pth')
 model.load_state_dict(checkpoint['model_state'])
 model.eval()
 
@@ -258,76 +262,188 @@ def _commit_training_sample(full_pil, bbox):
     new_name       = _next_image_name()
     dest_path      = os.path.join(TRAINING_DIR, new_name)
 
+    os.makedirs(TRAINING_DIR, exist_ok=True)
+
     full_pil.convert("RGB").save(dest_path, "JPEG", quality=95)
 
     with open(CSV_PATH, 'a', newline='') as f:
         csv.writer(f).writerow([LABEL_NAME, bx, by, bw, bh, new_name, img_w, img_h])
 
     print(f"Training sample saved: {new_name}  bbox=({bx},{by},{bw},{bh})")
-    return new_name
+    return new_name, dest_path
 
 
 # ── keyboard state ────────────────────────────────────────────────────────────
-_last_full_screenshot = [None]   # set on PrintScreen, consumed on Home
+_pending_capture = {
+    "full_screenshot": None,
+    "clipboard_signature": None,
+    "token": 0,
+}
+_last_saved_sample = {
+    "image_name": None,
+    "image_path": None,
+}
+_state_lock = threading.Lock()
 
 
-def _commit_on_home():
-    """
-    Called when Home is pressed.
-    Reads clipboard, template-matches against the saved screenshot, writes training entry.
-    """
-    if _last_full_screenshot[0] is None:
-        print("No screenshot available — press PrintScreen first.")
+def _get_clipboard_image():
+    clip_obj = ImageGrab.grabclipboard()
+    if isinstance(clip_obj, Image.Image):
+        return clip_obj.convert("RGB")
+    return None
+
+
+def _image_signature(pil_image):
+    rgb_image = pil_image.convert("RGB")
+    return f"{rgb_image.size[0]}x{rgb_image.size[1]}:{hashlib.md5(rgb_image.tobytes()).hexdigest()}"
+
+
+def _clear_pending_capture(token=None):
+    with _state_lock:
+        if token is not None and _pending_capture["token"] != token:
+            return False
+        _pending_capture["full_screenshot"] = None
+        _pending_capture["clipboard_signature"] = None
+        if token is None:
+            _pending_capture["token"] += 1
+        return True
+
+
+def _queue_capture_for_auto_commit(full_screenshot):
+    baseline_clip = _get_clipboard_image()
+    baseline_signature = _image_signature(baseline_clip) if baseline_clip is not None else None
+
+    with _state_lock:
+        _pending_capture["token"] += 1
+        token = _pending_capture["token"]
+        _pending_capture["full_screenshot"] = full_screenshot
+        _pending_capture["clipboard_signature"] = baseline_signature
+
+    threading.Thread(target=_wait_for_crop_and_commit, args=(token,), daemon=True).start()
+
+
+def _wait_for_crop_and_commit(token):
+    attempted_signatures = set()
+    started_at = time.time()
+
+    while time.time() - started_at < AUTO_COMMIT_TIMEOUT:
+        with _state_lock:
+            if _pending_capture["token"] != token:
+                return
+            full_screenshot = _pending_capture["full_screenshot"]
+            baseline_signature = _pending_capture["clipboard_signature"]
+
+        clip_img = _get_clipboard_image()
+        if clip_img is None:
+            time.sleep(AUTO_COMMIT_POLL_SECONDS)
+            continue
+
+        clip_signature = _image_signature(clip_img)
+        if clip_signature == baseline_signature or clip_signature in attempted_signatures:
+            time.sleep(AUTO_COMMIT_POLL_SECONDS)
+            continue
+
+        attempted_signatures.add(clip_signature)
+        bbox = _find_crop_in_screenshot(clip_img, full_screenshot)
+        if bbox is None:
+            time.sleep(AUTO_COMMIT_POLL_SECONDS)
+            continue
+
+        result = _commit_training_sample(full_screenshot, bbox)
+        image_name, image_path = result
+
+        with _state_lock:
+            if _pending_capture["token"] != token:
+                return
+            _pending_capture["full_screenshot"] = None
+            _pending_capture["clipboard_signature"] = None
+            _last_saved_sample["image_name"] = image_name
+            _last_saved_sample["image_path"] = image_path
+
         show_message(
-            "⚠  No screenshot saved.\nPress PrintScreen before cropping.",
-            duration=4,
-            bg_color="#B71C1C",
+            f"✓  Training sample added automatically!\n{image_name}",
+            duration=5,
+            bg_color="#2E7D32",
             fg_color="white",
-            window_width=380,
+            window_width=420,
             window_height=80,
         )
         return
 
-    clip_img = ImageGrab.grabclipboard()
-    if clip_img is None:
-        print("Clipboard does not contain an image.")
+    if _clear_pending_capture(token):
+        print("Timed out waiting for the Greenshot crop to appear in the clipboard.")
         show_message(
-            "⚠  No image in clipboard.\nCrop with Greenshot first.",
-            duration=4,
-            bg_color="#B71C1C",
-            fg_color="white",
-            window_width=380,
-            window_height=80,
-        )
-        return
-
-    bbox = _find_crop_in_screenshot(clip_img, _last_full_screenshot[0])
-    if bbox is None:
-        show_message(
-            "⚠  Could not locate crop in screenshot.\n"
-            "Make sure you crop from the same frame.",
+            "⚠  Timed out waiting for the Greenshot crop.\nPress PrintScreen and try again.",
             duration=5,
             bg_color="#E65100",
             fg_color="white",
-            window_width=420,
+            window_width=430,
             window_height=90,
+        )
+
+
+def _undo_last_training_sample():
+    with _state_lock:
+        image_name = _last_saved_sample["image_name"]
+        image_path = _last_saved_sample["image_path"]
+
+    if not image_name or not image_path:
+        print("No auto-saved training sample is available to undo for the current capture cycle.")
+        show_message(
+            "⚠  Dataset was not updated in this capture cycle.\nNothing to remove.",
+            duration=4,
+            bg_color="#B71C1C",
+            fg_color="white",
+            window_width=470,
+            window_height=85,
         )
         return
 
-    name = _commit_training_sample(_last_full_screenshot[0], bbox)
-    _last_full_screenshot[0] = None  # consume — avoid double-submit
+    if os.path.exists(image_path):
+        os.remove(image_path)
+        print(f"Removed training image: {image_path}")
+    else:
+        print(f"Training image already missing: {image_path}")
+
+    rows = []
+    if os.path.exists(CSV_PATH):
+        with open(CSV_PATH, 'r', newline='') as f:
+            rows = list(csv.reader(f))
+
+        rows = [row for row in rows if len(row) < 6 or row[5] != image_name]
+
+        with open(CSV_PATH, 'w', newline='') as f:
+            csv.writer(f).writerows(rows)
+        print(f"Removed annotation row for: {image_name}")
+
+    with _state_lock:
+        _last_saved_sample["image_name"] = None
+        _last_saved_sample["image_path"] = None
 
     show_message(
-        f"✓  Training sample added!\n{name}",
+        f"↶  Removed last training sample\n{image_name}",
         duration=5,
-        bg_color="#2E7D32",
+        bg_color="#6A1B9A",
         fg_color="white",
-        window_width=380,
+        window_width=400,
         window_height=80,
     )
 
 
+_CTRL_KEYS = (kb.Key.ctrl, kb.Key.ctrl_l, kb.Key.ctrl_r)
+_modifier_state = {"ctrl": False}
+
+
+def on_release(key):
+    if key in _CTRL_KEYS:
+        _modifier_state["ctrl"] = False
+
+
 def on_press(key):
+    if key in _CTRL_KEYS:
+        _modifier_state["ctrl"] = True
+        return
+
     try:
 
         # ── INSERT: take screenshot and run detector ──────────────────────────
@@ -361,18 +477,33 @@ def on_press(key):
         elif key == kb.Key.print_screen:
             # Capture immediately — before Greenshot's overlay appears.
             # Do NOT return False so Greenshot still receives the key.
-            _last_full_screenshot[0] = take_screenshot(monitor_index=1)
+            full_screenshot = take_screenshot(monitor_index=1)
+            # New capture cycle starts here: Home should only undo a sample
+            # created from this cycle, never an older one.
+            with _state_lock:
+                _last_saved_sample["image_name"] = None
+                _last_saved_sample["image_path"] = None
+            _queue_capture_for_auto_commit(full_screenshot)
             print("Full screenshot captured for potential training use.")
-            # silent — no toast, no interruption to the Greenshot workflow
+            show_message(
+                "📷  Screenshot captured.\nFinish the Greenshot crop to auto-add training data.",
+                duration=3,
+                bg_color="#546E7A",
+                fg_color="white",
+                window_width=560,
+                window_height=100,
+            )
 
-        # ── HOME: commit training sample ─────────────────────────────────────
+        # ── HOME: undo last auto-saved training sample ───────────────────────
         elif key == kb.Key.home:
-            threading.Thread(target=_commit_on_home, daemon=True).start()
+            threading.Thread(target=_undo_last_training_sample, daemon=True).start()
 
-        # ── ESC: quit ─────────────────────────────────────────────────────────
-        if key == kb.Key.esc:
-            print("Quitting...")
-            _exit_info["reason"] = "User pressed ESC"
+        # ── CTRL+Q: stop the script cleanly ───────────────────────────
+        # Note: with Ctrl held, key.char is often a control character (not
+        # 'q'), so match on the physical key's virtual-key code instead.
+        elif _modifier_state["ctrl"] and getattr(key, 'vk', None) == 0x51:
+            print("Ctrl+Q pressed. Stopping...")
+            _exit_info["reason"] = "User requested exit (Ctrl+Q)"
             return False
 
     except AttributeError:
@@ -390,23 +521,27 @@ def delete_results_folder(folder_path='./Results_for_Detector/'):
 def main():
     print(f"Device: {device}")
     print("Press 'Insert'       to take a screenshot and detect objects.")
-    print("Press 'PrintScreen'  to silently capture screen for training.")
-    print("Press 'Home'         to add the Greenshot crop as a training sample.")
-    print("Press 'ESC'          to quit.")
+    print("Press 'PrintScreen'  to silently capture screen for automatic training.")
+    print("Press 'Home'         to remove the last auto-saved training sample.")
+    print("Press 'Ctrl+Q'       to stop the script.")
 
     show_message(
-        "⌨  Insert: detect  |  ESC: quit\n"
-        "PrintScreen → crop (Greenshot) → Home: add training sample",
+        "Press 'Insert'       to take a screenshot and detect objects.\n"
+        "Press 'PrintScreen'  to silently capture screen for automatic training.\n"
+        "Press 'Home'         to remove the last auto-saved training sample.\n"
+        "Press 'Ctrl+Q'       to stop the script.",
         duration=7,
         bg_color="#1565C0",
         fg_color="white",
-        window_width=460,
-        window_height=90,
+        window_width=560,
+        window_height=140,
     )
 
     try:
-        with keyboard.Listener(on_press=on_press) as listener:
+        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
             listener.join()
+    except KeyboardInterrupt:
+        _exit_info["reason"] = _exit_info["reason"] or "Keyboard interrupt (Ctrl+C)"
     except Exception as e:
         _exit_info["code"]   = 1
         _exit_info["reason"] = str(e)

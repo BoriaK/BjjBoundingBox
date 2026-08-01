@@ -17,8 +17,9 @@ import matplotlib.pyplot as plt
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--resume_epoch', type=int, default=None, help='starting epoch')
-parser.add_argument('--n_epochs', type=int, default=20, help='number of epochs of training')
+parser.add_argument('--resume_epoch', type=int, default=19,
+                    help='checkpoint epoch to resume from (next epoch is used for training)')
+parser.add_argument('--n_epochs', type=int, default=20, help='number of additional epochs to train')
 parser.add_argument('--batch_size', type=int, default=4, help='size of the batches')
 # parser.add_argument('--data', type=str, default=r'./Dataset/Sub_Set_v01/train/bed', help='root directory of the '
 #                                                                                          'dataset')
@@ -93,12 +94,17 @@ def trainDetector():
         model.load_state_dict(checkpoint['model_state'])
         optimizer.load_state_dict(checkpoint['optimizer_state'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state'])
-        start_epoch = args.resume_epoch
+        checkpoint_epoch = checkpoint.get('epoch', args.resume_epoch)
+        start_epoch = checkpoint_epoch + 1
     else:
         start_epoch = 0
+    end_epoch = start_epoch + args.n_epochs
+
+    best_loss = float('inf')
+    best_epoch = None
 
     '''train loop'''
-    for epoch in range(start_epoch, args.n_epochs):
+    for epoch in range(start_epoch, end_epoch):
         model.train()
         is_train = True
         loss_av = 0.
@@ -146,7 +152,7 @@ def trainDetector():
                       'loss_box_reg:{:2f}, '
                       'loss_objectness={:2f}, '
                       'loss_rpn_box_reg={:2f}'.
-                      format(epoch, args.n_epochs,
+                      format(epoch, end_epoch,
                              batch_idx, len(data_loader),
                              optimizer.param_groups[0]["lr"],
                              losses2print[0],
@@ -169,19 +175,20 @@ def trainDetector():
         #     # for Debug dissable saving new check points:
         #     torch.save(checkpoint, './checkpoints/bjj_' + str(epoch) + '.pth')
         # save checkpoint for the epoch with the lowest loss:
-        if epoch == 0 or epoch == args.n_epochs - 1:
+        if epoch == start_epoch or epoch == end_epoch - 1:
             checkpoint = {'epoch': epoch,
                           'model_state': model.state_dict(),
                           'optimizer_state': optimizer.state_dict(),
                           'lr_scheduler_state': lr_scheduler.state_dict()
                           }
             best_loss = loss_av
-            best_epoch = 0
+            best_epoch = epoch
             # for Debug dissable saving new check points:
             torch.save(checkpoint, './checkpoints/bjj_' + str(epoch) + '.pth')
         elif losses2print[0] < best_loss:
             # remove the previous best checkpoint
-            os.remove('./checkpoints/bjj_' + str(best_epoch) + '.pth')
+            if best_epoch is not None:
+                os.remove('./checkpoints/bjj_' + str(best_epoch) + '.pth')
             # save a new best checkpoint
             checkpoint = {'epoch': epoch,
                           'model_state': model.state_dict(),
