@@ -18,7 +18,7 @@ Workflow
    • S             → skip this image (leave it pending).
    • ESC           → quit the annotator.
 5. Annotated images are moved to ./Pending_Annotation/annotated/
-6. Re-run run_Train_Detector.py (with --resume_epoch 19) to fine-tune the model.
+6. Re-run run_Train_Detector.py (resumes from the inference checkpoint by default) to fine-tune the model.
 """
 
 import csv
@@ -227,7 +227,7 @@ def main():
     print(f"Done.  {saved} image(s) added to the training dataset.")
     if saved:
         print("\nNext step – fine-tune the model from the last checkpoint:")
-        print("  python run_Train_Detector.py --resume_epoch 19 --n_epochs 25")
+        print("  python run_Train_Detector.py --n_epochs 25")
         print("\nTip: use a small number of extra epochs (5-10) to avoid")
         print("     catastrophic forgetting of previously learned positions.")
 

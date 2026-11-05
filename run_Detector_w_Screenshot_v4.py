@@ -6,6 +6,7 @@ import os
 import time
 import torch
 from Common_Files.Models import Detector
+from Common_Files.checkpoint_config import ACTIVE_CHECKPOINT
 import cv2
 import numpy as np
 import torchvision.transforms.functional as Ftv
@@ -37,8 +38,10 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 n_classes = 2
 is_train  = False
 model     = Detector(n_classes, device)
-checkpoint = torch.load('./checkpoints/bjj_39' + '.pth')
+print(f"Loading checkpoint: {ACTIVE_CHECKPOINT}")
+checkpoint = torch.load(ACTIVE_CHECKPOINT)
 model.load_state_dict(checkpoint['model_state'])
+print(f"Checkpoint epoch: {checkpoint.get('epoch')}")
 model.eval()
 
 # ── exit notification ─────────────────────────────────────────────────────────
@@ -520,13 +523,13 @@ def delete_results_folder(folder_path='./Results_for_Detector/'):
 
 def main():
     print(f"Device: {device}")
-    print("Press 'Insert'       to take a screenshot and detect objects.")
-    print("Press 'PrintScreen'  to silently capture screen for automatic training.")
+    print("Press 'Insert'       to screenshot, detect, crop to the bounding box, and copy the crop to the clipboard.")
+    print("Press 'PrintScreen'  to silently capture the full screen; finishing a Greenshot crop auto-adds a training sample.")
     print("Press 'Home'         to remove the last auto-saved training sample.")
     print("Press 'Ctrl+Q'       to stop the script.")
 
     show_message(
-        "Press 'Insert'       to take a screenshot and detect objects.\n"
+        "Press 'Insert'       to screenshot, detect, crop, and copy the crop to clipboard.\n"
         "Press 'PrintScreen'  to silently capture screen for automatic training.\n"
         "Press 'Home'         to remove the last auto-saved training sample.\n"
         "Press 'Ctrl+Q'       to stop the script.",

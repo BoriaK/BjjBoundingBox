@@ -1,6 +1,8 @@
+import csv
 import glob
 import os
 import torch
+from torchvision import tv_tensors
 from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms as transforms
@@ -34,21 +36,30 @@ class ObjectDetectDataset(Dataset):
     def __getitem__(self, index):
         f_img = self.imgs[index]
         annos = self.annos[index]
-        img_cv = cv2.imread(os.path.join(self.root, f_img))[:, :, ::-1]
+        img_path = os.path.join(self.root, f_img)
+        img_bgr = cv2.imread(img_path)
+        if img_bgr is None:
+            raise FileNotFoundError('cannot read image: ' + img_path)
+        img_cv = np.ascontiguousarray(img_bgr[:, :, ::-1])
         classes = self.classes[index]
         area = self.areas[index]
         img_id = self.img_id[index]
 
-        if self.mode == 'train':
-            if self.transform:
-                bboxes = annos.numpy().copy()
-                img, bboxes = self.transform(img_cv.copy(), bboxes.copy())
-                img = Ftv.to_tensor(img.copy())
-                annos = torch.from_numpy(bboxes.copy())
-            else:
-                img = Ftv.to_tensor(img_cv.copy())
-        else:
-            img = Ftv.to_tensor(img_cv.copy())
+        img = None
+        if self.mode == 'train' and self.transform:
+            # v2 transforms only touch tv_tensors; plain numpy inputs pass through unchanged
+            img_tv = tv_tensors.Image(torch.from_numpy(img_cv).permute(2, 0, 1))
+            boxes_tv = tv_tensors.BoundingBoxes(annos.clone(), format='XYXY', canvas_size=img_tv.shape[-2:])
+            img_aug, boxes_aug = self.transform(img_tv, boxes_tv)
+            boxes_aug = boxes_aug.as_subclass(torch.Tensor)
+            wh = boxes_aug[:, 2:] - boxes_aug[:, :2]
+            # keep the augmentation only if the box survived it (e.g. wasn't rotated out of the frame)
+            if bool((wh >= 1).all()):
+                img = img_aug.as_subclass(torch.Tensor).float().div(255)
+                annos = boxes_aug
+                area = (wh[:, 0] * wh[:, 1]).float()
+        if img is None:
+            img = Ftv.to_tensor(img_cv)
 
         # img.type(self.dtypes['float'])
         item = {'boxes': annos,
@@ -60,30 +71,44 @@ class ObjectDetectDataset(Dataset):
         return img, item
 
     def __len__(self):
-        return len(self.fnames)
+        return len(self.imgs)
 
     def readAnnos(self):
         annos = []
         imgs = []
         classes = []
         areas = []
-        f = open(self.f_annos, 'r')
-        lines = f.readlines()
-        img_id = torch.arange(0, len(lines), 1).type(torch.LongTensor)
-        for k, line_ in enumerate(lines):
-            if k >= 1:
-                line = line_.replace(' ', '')
-                img_name = line.split(',')[5]
+        required = ('bbox_x', 'bbox_y', 'bbox_width', 'bbox_height', 'image_name')
+        with open(self.f_annos, 'r', newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            reader.fieldnames = [name.strip() for name in (reader.fieldnames or [])]
+            missing = [name for name in required if name not in reader.fieldnames]
+            if missing:
+                raise ValueError('{} is missing columns: {}'.format(self.f_annos, ', '.join(missing)))
+            for row in reader:
+                row = {k: (v or '').strip() for k, v in row.items() if k is not None}
+                if not any(row.values()):
+                    continue
+                try:
+                    x, y, w, h = (int(float(row[name])) for name in required[:4])
+                except ValueError:
+                    raise ValueError('{}: invalid bounding box on line {}'.format(self.f_annos, reader.line_num))
+                img_name = row['image_name']
+                if w <= 0 or h <= 0:
+                    print('Warning: skipping {} (empty bounding box)'.format(img_name))
+                    continue
+                if not os.path.isfile(os.path.join(self.root, img_name)):
+                    print('Warning: skipping {} (image file not found)'.format(img_name))
+                    continue
                 annos_k = torch.zeros(1, 4).type(torch.FloatTensor)
                 # the anotations come in the following format: x, y, W, H. need to convert to x0,y0,x1,y1
-                annos_k[0, :] = torch.Tensor([int(line.split(',')[1]), int(line.split(',')[2]),
-                                              int(line.split(',')[1]) + int(line.split(',')[3]),
-                                              int(line.split(',')[2]) + int(line.split(',')[4])])
-                areas_k = torch.Tensor([int(line.split(',')[3]) * int(line.split(',')[4])])
+                annos_k[0, :] = torch.Tensor([x, y, x + w, y + h])
+                areas_k = torch.Tensor([w * h])
                 classes_k = 1 * torch.ones(1).type(torch.LongTensor)
 
                 annos.append(annos_k)
                 imgs.append(img_name)
                 classes.append(classes_k)
                 areas.append(areas_k)
+        img_id = torch.arange(0, len(imgs), 1).type(torch.LongTensor)
         return annos, imgs, classes, areas, img_id

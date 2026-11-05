@@ -17,6 +17,7 @@ import torch
 import torchvision.transforms.functional as Ftv
 
 from Common_Files.Models import Detector
+from Common_Files.checkpoint_config import ACTIVE_CHECKPOINT
 
 N_CLASSES = 2
 IS_TRAIN = False
@@ -26,7 +27,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Crop a video to the detected ROI using the BJJ detector.")
     parser.add_argument("--input", required=True, help="Path to the source video file.")
     parser.add_argument("--output", required=True, help="Path to write the cropped output video (.mp4).")
-    parser.add_argument("--checkpoint", default="./checkpoints/bjj_39.pth",
+    parser.add_argument("--checkpoint", default=ACTIVE_CHECKPOINT,
                          help="Path to the detector checkpoint (default: %(default)s).")
     parser.add_argument("--detect-every-n", type=int, default=1,
                          help="Run detection every Nth frame; box is held between detections (default: %(default)s).")
@@ -45,8 +46,10 @@ def parse_args():
 
 def load_model(checkpoint_path, device):
     model = Detector(N_CLASSES, device)
+    print(f"Loading checkpoint: {checkpoint_path}")
     checkpoint = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(checkpoint['model_state'])
+    print(f"Checkpoint epoch: {checkpoint.get('epoch')}")
     model.eval()
     return model
 
