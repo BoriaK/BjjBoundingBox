@@ -266,8 +266,11 @@ def copy_image_to_clipboard(cropped_pil_image):
 
 
 def show_message(message, duration=5, bg_color="#4CAF50", fg_color="white",
-                 window_width=400, window_height=80):
-    """Display a small non-blocking toast that closes after *duration* seconds."""
+                 window_width=400, window_height=80, align="center"):
+    """Display a small non-blocking toast that closes after *duration* seconds.
+
+    *align* is "center" (default) or "left" for the text alignment."""
+    anchor = "w" if align == "left" else "center"
     def build():
         top = tk.Toplevel(_gui_root)
         top.overrideredirect(True)
@@ -289,6 +292,8 @@ def show_message(message, duration=5, bg_color="#4CAF50", fg_color="white",
             bg=bg_color,
             fg=fg_color,
             wraplength=window_width - 20,
+            justify="left" if align == "left" else "center",
+            anchor=anchor,
         ).pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         top.after(duration * 1000, top.destroy)
@@ -912,7 +917,65 @@ _modifier_state = {"ctrl": False, "shift": False}
 # Windows auto-repeats a held key, and pynput forwards every repeat as its own
 # on_press call. Without this guard, holding Insert a moment too long fires the
 # toggle twice (e.g. arm-then-cancel) in one physical press.
-_insert_held = {"down": False}
+_insert_held = {"down": False, "pressed_at": 0.0, "last_event": 0.0}
+# If a key-up event is ever lost, the flag would otherwise swallow the next
+# real press. Repeats arrive in a rapid stream, so a flag that is old and
+# whose last event was not recent is treated as stale.
+_INSERT_REPEAT_GAP_S = 0.25
+_INSERT_STALE_AFTER_S = 1.5
+_listener_ref = {"listener": None}
+_classical_lock = threading.Lock()
+
+
+def _insert_press_is_repeat():
+    now = time.monotonic()
+    gap = now - _insert_held["last_event"]
+    age = now - _insert_held["pressed_at"]
+    _insert_held["last_event"] = now
+    if _insert_held["down"] and (gap < _INSERT_REPEAT_GAP_S or age < _INSERT_STALE_AFTER_S):
+        return True
+    _insert_held["down"] = True
+    _insert_held["pressed_at"] = now
+    return False
+
+
+def _run_classical_capture():
+    """Screenshot + detect + crop + clipboard. Runs off the keyboard-hook thread
+    so the hook returns immediately and Windows never drops key events."""
+    if not _classical_lock.acquire(blocking=False):
+        return  # a capture is already in progress
+    try:
+        monitor_index = 1
+        print(f"Taking screenshot of monitor {monitor_index}...")
+        image = take_screenshot(monitor_index)
+
+        print("Detecting objects...")
+        predictions            = detect_objects(image)
+        boxes, labels, scores  = process_predictions(predictions)
+
+        if not boxes:
+            print("No objects detected. Quitting...")
+            _exit_info["reason"] = "No objects detected"
+            listener = _listener_ref["listener"]
+            if listener is not None:
+                listener.stop()
+            return
+
+        print(f"Detected {len(boxes)} objects:")
+        for i in range(len(boxes)):
+            print(f"Object {i + 1}:")
+            print(f"  Bounding Box: {boxes[i]}")
+            print(f"  Label:        {labels[i]}")
+            print(f"  Score:        {scores[i]:.4f}")
+
+        draw_boxes(image, boxes)
+        cropped_image = crop_and_save_image(image, boxes[0])
+        copy_image_to_clipboard(cropped_image)
+        show_message("✓ Screenshot saved and copied to clipboard!", duration=5)
+    except Exception as e:
+        print(f"Capture failed: {e}")
+    finally:
+        _classical_lock.release()
 
 
 def on_release(key):
@@ -936,9 +999,8 @@ def on_press(key):
 
         # ── INSERT: classical flow, or dynamic recording if Shift/Ctrl is held ──
         if key == kb.Key.insert:
-            if _insert_held["down"]:
+            if _insert_press_is_repeat():
                 return  # ignore OS key-repeat while held
-            _insert_held["down"] = True
 
             if _modifier_state["shift"]:
                 with _dynamic_lock:
@@ -958,30 +1020,7 @@ def on_press(key):
                     _stop_manual_recording()
                 return
 
-            monitor_index = 1
-            print(f"Taking screenshot of monitor {monitor_index}...")
-            image = take_screenshot(monitor_index)
-
-            print("Detecting objects...")
-            predictions            = detect_objects(image)
-            boxes, labels, scores  = process_predictions(predictions)
-
-            if not boxes:
-                print("No objects detected. Quitting...")
-                _exit_info["reason"] = "No objects detected"
-                return False
-
-            print(f"Detected {len(boxes)} objects:")
-            for i in range(len(boxes)):
-                print(f"Object {i + 1}:")
-                print(f"  Bounding Box: {boxes[i]}")
-                print(f"  Label:        {labels[i]}")
-                print(f"  Score:        {scores[i]:.4f}")
-
-            draw_boxes(image, boxes)
-            cropped_image = crop_and_save_image(image, boxes[0])
-            copy_image_to_clipboard(cropped_image)
-            show_message("✓ Screenshot saved and copied to clipboard!", duration=5)
+            threading.Thread(target=_run_classical_capture, daemon=True).start()
 
         # ── PRINT SCREEN: silently snapshot the screen for training ──────────
         elif key == kb.Key.print_screen:
@@ -1057,10 +1096,12 @@ def main():
         fg_color="white",
         window_width=580,
         window_height=200,
+        align="left",
     )
 
     try:
         with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+            _listener_ref["listener"] = listener
             listener.join()
     except KeyboardInterrupt:
         _exit_info["reason"] = _exit_info["reason"] or "Keyboard interrupt (Ctrl+C)"
